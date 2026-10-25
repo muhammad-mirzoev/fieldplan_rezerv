@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load i18n static l10n %}
+
+{% block title %}{% trans "Мои поля" %}{% endblock %}
+{% block page_title %}{% trans "План на следующий сезон" %}{% endblock %}
+{% block page_subtitle %}{% trans "Сравните варианты для вашего поля" %}{% endblock %}
+
+{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+{% endblock %}
+{% if not current %}
+  <div class="empty card">
+    <h3>{% trans "Пока нет полей" %}</h3>
+    <p>{% trans "Добавьте первый участок на карте." %}</p>
+  </div>
+{% else %}
+<section class="grid-2">
+  <!-- Левая карточка: поле и карта -->
+  <div class="card">
+    <div class="card-top">
+      <div>
+        <h2>{{ current.name }}</h2>
+        <p class="muted"><i data-lucide="map-pin"></i> {{ current.get_region_display }}</p>
+      </div>
+      <form method="post" action="{% url 'field_create' %}" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="lat" value="{{ current.center_lat }}">
+        <input type="hidden" name="lon" value="{{ current.center_lon }}">
+        <button type="submit" class="add">+ {% trans "Новый участок" %}</button>
+      </form>
+    </div>
+
+    <form id="map-search" class="map-search" autocomplete="off">
+      <i data-lucide="search"></i>
+      <input name="q" type="search" placeholder="{% trans 'Найти село, город, адрес…' %}">
+      <button type="submit">{% trans "Найти" %}</button>
+      <ul id="search-results"></ul>
+    </form>
+
+    <div class="map-wrap">
+      <div id="map" class="map"
+           data-lat="{{ current.center_lat|unlocalize }}" data-lon="{{ current.center_lon|unlocalize }}"
+           data-save-url="{% url 'field_boundary' current.pk %}"></div>
+      <span class="badge" id="area-badge">{{ current.area_ha|default:"—" }} га</span>
+      <span class="toast" id="map-toast"></span>
+    </div>
+    {{ current.boundary|json_script:"field-boundary" }}
+  </div>
+
+  <!-- Правая карточка: условия на поле -->
+  <form class="card" method="post" action="{% url 'compare' current.pk %}">
+    {% csrf_token %}
+    <h2>{% trans "Условия на поле" %}</h2>
+
+    <label class="lbl">{% trans "Прошлая культура" %}</label>
+    <div class="select"><i data-lucide="wheat"></i>
+      <select name="previous_crop">
+        <option value="">{% trans "Выберите" %}</option>
+        {% for c in crops %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <label class="lbl">{% trans "Полив" %}</label>
+    <div class="select"><i data-lucide="droplet"></i>
+      <select name="irrigation">
+        <option value="">{% trans "Выберите" %}</option>
+        {% for value, label in irrigation_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <label class="lbl">{% trans "Почва" %}</label>
+    <div class="select"><i data-lucide="layers"></i>
+      <select name="soil_type">
+        {% for value, label in soil_choices %}
+          <option value="{{ value }}" {% if value == "unknown" %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <label class="lbl">{% trans "Что для вас важнее?" %}</label>
+    {% for value, label, icon in priorities %}
+      <label class="radio">
+        <input type="radio" name="priority" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
+        <i data-lucide="{{ icon }}"></i><span>{{ label }}</span><b class="dot"></b>
+      </label>
+    {% endfor %}
+
+    <button class="btn" type="submit">{% trans "Сравнить планы" %} <i data-lucide="arrow-right"></i></button>
+  </form>
+</section>
+
+<!-- Результаты -->
+<section class="results">
+  <div class="results-head">
+    <h2>{% trans "Варианты севооборота" %}</h2>
+    <span class="muted"><i data-lucide="info"></i> {% trans "Уточните культуры с агрономом" %}</span>
+  </div>
+
+  {% if latest and latest.plans.all %}
+    <div class="grid-3">
+      {% for plan in latest.plans.all %}
+        <article class="card plan">
+          <h3>{% trans "План" %} {{ plan.rank }}</h3>
+          <ol>{% for y in plan.years.all %}<li>{% trans "Год" %} {{ y.year_index }} — {{ y.crop.name }}</li>{% endfor %}</ol>
+          <dl>
+            <dt>{% trans "Почва" %}</dt><dd>{{ plan.soil_score|floatformat:0 }}</dd>
+            <dt>{% trans "Вода" %}</dt><dd>{{ plan.water_score|floatformat:0 }}</dd>
+            <dt>{% trans "Доход" %}</dt><dd>{{ plan.income_score|floatformat:0 }}</dd>
+            <dt>{% trans "Риск" %}</dt><dd>{{ plan.risk_score|floatformat:0 }}</dd>
+          </dl>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty dashed">
+      <span class="empty-icon"><i data-lucide="sprout"></i></span>
+      <h3>{% trans "Здесь появятся варианты" %}</h3>
+      <p>{% trans "Заполните условия на поле и нажмите «Сравнить планы»." %}</p>
+    </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="{% static 'js/map.js' %}"></script>
+{% endblock %}

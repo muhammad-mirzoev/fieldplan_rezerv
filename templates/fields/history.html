@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "История" %}{% endblock %}
+{% block page_title %}{% trans "История" %}{% endblock %}
+{% block page_subtitle %}{% trans "Ваши прошлые сравнения" %}{% endblock %}
+
+{% block content %}
+{% if items %}
+  <div class="list">
+    {% for c in items %}
+      <a class="card row" href="{% url 'field_detail' c.field.pk %}">
+        <div>
+          <b>{{ c.field.name }}</b>
+          <span class="muted">{{ c.get_priority_display }}{% if c.previous_crop %} · {{ c.previous_crop.name }}{% endif %}</span>
+        </div>
+        <span class="muted">{{ c.created_at|date:"d.m.Y H:i" }}</span>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty dashed">
+    <span class="empty-icon"><i data-lucide="clock"></i></span>
+    <h3>{% trans "История пока пуста" %}</h3>
+    <p>{% trans "Каждое сравнение планов будет сохраняться здесь." %}</p>
+  </div>
+{% endif %}
+{% endblock %}

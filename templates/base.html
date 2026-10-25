@@ -1,0 +1,67 @@
+<!doctype html>
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Field Shift{% endblock %} · SuuPlan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% with page=request.resolver_match.url_name %}
+<aside class="sidebar">
+  <a class="brand" href="{% url 'my_fields' %}">
+    <span class="brand-icon"><i data-lucide="leaf"></i></span>
+    <span>Field Shift</span>
+  </a>
+  <nav>
+    <a href="{% url 'my_fields' %}" class="{% if page == 'my_fields' or page == 'field_detail' %}active{% endif %}">
+      <i data-lucide="map"></i>{% trans "Мои поля" %}</a>
+    <a href="{% url 'plans' %}" class="{% if page == 'plans' %}active{% endif %}">
+      <i data-lucide="calendar-days"></i>{% trans "План посадок" %}</a>
+    <a href="{% url 'history' %}" class="{% if page == 'history' %}active{% endif %}">
+      <i data-lucide="clock"></i>{% trans "История" %}</a>
+    <a href="{% url 'help' %}" class="{% if page == 'help' %}active{% endif %}">
+      <i data-lucide="circle-help"></i>{% trans "Помощь" %}</a>
+  </nav>
+</aside>
+{% endwith %}
+
+<main class="main">
+  <div class="container">
+    <header class="page-head">
+      <div>
+        <h1>{% block page_title %}{% endblock %}</h1>
+        <p class="subtitle">{% block page_subtitle %}{% endblock %}</p>
+      </div>
+      <div class="head-tools">
+        <form action="{% url 'set_language' %}" method="post" class="lang">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button name="language" value="ru" class="{% if LANGUAGE_CODE == 'ru' %}on{% endif %}">RU</button>
+          <span>/</span>
+          <button name="language" value="ky" class="{% if LANGUAGE_CODE == 'ky' %}on{% endif %}">КЫР</button>
+        </form>
+        <span class="avatar"><i data-lucide="user"></i></span>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer class="foot">
+      <span>{% trans "Демонстрационный пример" %}</span>
+      <span>{% trans "Климатические данные: NASA POWER" %}</span>
+    </footer>
+  </div>
+</main>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

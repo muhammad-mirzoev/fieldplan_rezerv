@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "План посадок" %}{% endblock %}
+{% block page_title %}{% trans "План посадок" %}{% endblock %}
+{% block page_subtitle %}{% trans "Выбранные варианты севооборота для ваших полей" %}{% endblock %}
+
+{% block content %}
+{% if plans %}
+  <div class="grid-3">
+    {% for plan in plans %}
+      <article class="card plan">
+        <p class="muted">{{ plan.comparison.field.name }}</p>
+        <h3>{% trans "План" %} {{ plan.rank }}</h3>
+        <ol>{% for y in plan.years.all %}<li>{% trans "Год" %} {{ y.year_index }} — {{ y.crop.name }}</li>{% endfor %}</ol>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty dashed">
+    <span class="empty-icon"><i data-lucide="calendar-days"></i></span>
+    <h3>{% trans "Пока нет сохранённых планов" %}</h3>
+    <p>{% trans "Сравните варианты на странице «Мои поля» и выберите подходящий." %}</p>
+    <a class="btn small" href="{% url 'my_fields' %}">{% trans "Перейти к полям" %}</a>
+  </div>
+{% endif %}
+{% endblock %}
